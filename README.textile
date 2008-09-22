@@ -1,1 +1,14 @@
-<h1>Mysqlplus AR adapter - work in progress</h1>
+<h1>Mysqlplus ActiveRecord Adapter</h1>
+
+<h2>Rails 2.2 connection pools</h2>
+
+Here's preliminary results with the default pool size of 5 connections.
+
+<pre><code>
+>> threads = []
+=> []
+>> 5.times{ threads << Thread.new{ ActiveRecord::Base.connection.execute("SELECT sleep(1)") } } 
+=> 5
+>> Benchmark.measure{ threads.each{|t| t.join } }
+=> #<Benchmark::Tms:0x83cb22c @cstime=0.0, @cutime=0.0, @total=0.0199999999999978, @label="", @stime=0.00999999999999979, @real=1.06578612327576, @utime=0.00999999999999801>
+</code></pre>

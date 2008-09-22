@@ -15,9 +15,9 @@ module ActiveRecord
       end
       
       def execute(sql, name = nil) #:nodoc:
-        ActiveRecord::Base.connection_pool.with_connection do |conn|
-          log(sql,name) { conn.c_async_query(sql) }
-        end
+        log(sql,name) do 
+          @connection.c_async_query(sql)
+        end    
       end
             
     end
