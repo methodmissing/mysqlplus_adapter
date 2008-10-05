@@ -78,6 +78,7 @@ module ActiveRecord
       def initialize( &query )
         @query = query
         defer!
+        self
       end
 
       def defer!
