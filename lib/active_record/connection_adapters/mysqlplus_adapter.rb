@@ -51,21 +51,75 @@ module ActiveRecord
 end
 
 module ActiveRecord
-  class Base
+  module Deferrable
+    
+    def self.included(base)
+      base.extend( SingletonMethods )
+    end
+    
+    module SingletonMethods
+      def defer(*methods)
+        methods.each do |method|
+          class_eval <<-EOS
+            def #{method}_with_defer(*args, &block)
+              ActiveRecord::Deferrable::Result.new do
+                #{method}_without_defer(*args, &block)
+              end
+            end
 
-    class << self
+            alias_method_chain :#{method}, :defer
+          EOS
+        end
+      end      
+    end
+    
+    class Result < ActiveSupport::BasicObject
 
-      def find_by_sql(sql)
-        connection_pool.with_connection do |connection|
-          connection.select_all(sanitize_sql(sql), "#{name} Load").collect! { |record|   instantiate(record) }
+      def initialize( &query )
+        @query = query
+        defer!
+      end
+
+      def defer!
+        @result = Thread.new(@query) do |query|
+          begin
+            query.call    
+          ensure
+            ::ActiveRecord::Base.connection_pool.release_connection
+          end    
         end
       end
 
+      def method_missing(*args, &block)
+        @_result ||= @result.value
+        @_result.send(*args, &block)
+      end 
+
+    end    
+  end  
+end
+
+module ActiveRecord
+  class Base
+    include ActiveRecord::Deferrable    
+    
+    class << self
+      include ActiveRecord::Deferrable    
+      defer :find_by_sql,
+            #:exists?, # yields syntax err. with alias_method_chain
+            :update_all,
+            :delete_all,
+            :count_by_sql,
+            #:table_exists?, # yields syntax err. with alias_method_chain
+            :columns
     end   
+    
+    defer :destroy,
+          :update,
+          :create            
     
   end
 end
-
 module ActiveRecord
   module ConnectionAdapters
     class MysqlplusAdapter < ActiveRecord::ConnectionAdapters::MysqlAdapter
