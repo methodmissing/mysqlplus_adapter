@@ -72,6 +72,30 @@ module ActiveRecord
         @connection.affected_rows
       end  
 
+      def begin_db_transaction #:nodoc:
+        without_result do
+          execute "BEGIN"
+        end
+      rescue Exception
+        # Transactions aren't supported
+      end
+
+      def commit_db_transaction #:nodoc:
+        without_result do
+          execute "COMMIT"
+        end
+      rescue Exception
+        # Transactions aren't supported
+      end
+
+      def rollback_db_transaction #:nodoc:
+        without_result do
+          execute "ROLLBACK"
+        end
+      rescue Exception
+        # Transactions aren't supported
+      end
+
       private 
 
       def without_result
