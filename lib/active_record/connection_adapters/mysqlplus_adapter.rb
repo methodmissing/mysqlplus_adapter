@@ -5,6 +5,7 @@ rescue LoadError
   raise
 end
 require 'active_record/connection_adapters/mysql_adapter'
+#require 'active_record/connection_adapters/deferrable'
 
 module ActiveRecord
   module ConnectionAdapters
@@ -25,14 +26,7 @@ module ActiveRecord
         @size = (spec.config[:pool] && spec.config[:pool].to_i) || 5
         @connections = []
         @checked_out = []
-        warmup!
-      end
-      
-      alias :original_checkout_existing_connection :checkout_existing_connection
-      
-      def checkout_existing_connection
-        c = (@connections - @checked_out).detect{|c| c.ready? }
-        checkout_and_verify(c)
+        warmup! if spec.config[:warmup]
       end
             
       private
@@ -48,79 +42,8 @@ module ActiveRecord
      
     end  
   end    
-end
+end    
 
-module ActiveRecord
-  module Deferrable
-    
-    def self.included(base)
-      base.extend( SingletonMethods )
-    end
-    
-    module SingletonMethods
-      def defer(*methods)
-        methods.each do |method|
-          class_eval <<-EOS
-            def #{method}_with_defer(*args, &block)
-              ActiveRecord::Deferrable::Result.new do
-                #{method}_without_defer(*args, &block)
-              end
-            end
-
-            alias_method_chain :#{method}, :defer
-          EOS
-        end
-      end      
-    end
-    
-    class Result < ActiveSupport::BasicObject
-
-      def initialize( &query )
-        @query = query
-        defer!
-        self
-      end
-
-      def defer!
-        @result = Thread.new(@query) do |query|
-          begin
-            query.call    
-          ensure
-            ::ActiveRecord::Base.connection_pool.release_connection
-          end    
-        end
-      end
-
-      def method_missing(*args, &block)
-        @_result ||= @result.value
-        @_result.send(*args, &block)
-      end 
-
-    end    
-  end  
-end
-
-module ActiveRecord
-  class Base
-    include ActiveRecord::Deferrable    
-    
-    class << self
-      include ActiveRecord::Deferrable    
-      defer :find_by_sql,
-            #:exists?, # yields syntax err. with alias_method_chain
-            :update_all,
-            :delete_all,
-            :count_by_sql,
-            #:table_exists?, # yields syntax err. with alias_method_chain
-            :columns
-    end   
-    
-    defer :destroy,
-          :update,
-          :create            
-    
-  end
-end
 module ActiveRecord
   module ConnectionAdapters
     class MysqlplusAdapter < ActiveRecord::ConnectionAdapters::MysqlAdapter
@@ -128,16 +51,37 @@ module ActiveRecord
       def socket
         @connection.socket
       end
-
-      def ready?
-        @connection.ready?        
-      end
       
       def execute(sql, name = nil) #:nodoc:
-        log(sql,name) do 
-          @connection.c_async_query(sql)
+        log("(Socket #{socket.to_s}) #{sql}",name) do 
+          @connection.c_async_query( sql )
         end
       end
+ 
+      def insert_sql(sql, name = nil, pk = nil, id_value = nil, sequence_name = nil) #:nodoc:
+        without_result do
+          super sql, name
+        end  
+        id_value || @connection.insert_id
+      end
+
+      def update_sql(sql, name = nil) #:nodoc:
+        without_result do
+          super
+        end  
+        @connection.affected_rows
+      end  
+
+      private 
+
+      def without_result
+        begin
+          @connection.query_with_result = false
+          yield
+        ensure
+          @connection.query_with_result = true
+        end
+      end 
  
     end
   end
