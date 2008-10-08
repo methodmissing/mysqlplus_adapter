@@ -106,6 +106,11 @@ module ActiveRecord
           @connection.query_with_result = true
         end
       end 
+
+      def configure_connection
+        super 
+        @connection.disable_gc = true
+      end
  
     end
   end
