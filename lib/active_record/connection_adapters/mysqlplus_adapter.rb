@@ -5,7 +5,7 @@ rescue LoadError
   raise
 end
 require 'active_record/connection_adapters/mysql_adapter'
-#require 'active_record/connection_adapters/deferrable'
+require 'active_record/connection_adapters/deferrable'
 
 module ActiveRecord
   module ConnectionAdapters
@@ -47,6 +47,8 @@ end
 module ActiveRecord
   module ConnectionAdapters
     class MysqlplusAdapter < ActiveRecord::ConnectionAdapters::MysqlAdapter
+      
+      DEFERRABLE_SQL = /^(INSERT|UPDATE|ALTER|DROP|SELECT|DELETE|RENAME|REPLACE|TRUNCATE)/i
 
       def socket
         @connection.socket
@@ -54,58 +56,31 @@ module ActiveRecord
       
       def execute(sql, name = nil) #:nodoc:
         log("(Socket #{socket.to_s}) #{sql}",name) do 
-          @connection.c_async_query( sql )
+          if deferrable?( sql )
+            ::ActiveRecord::Deferrable::Result.new( sql, @connection.query_with_result )  
+          else
+            @connection.c_async_query( sql )
+          end
         end
       end
- 
-      def insert_sql(sql, name = nil, pk = nil, id_value = nil, sequence_name = nil) #:nodoc:
-        without_result do
-          super sql, name
-        end  
-        id_value || @connection.insert_id
+      
+      def deferrable?( sql )
+        !open_transactions? && initialized? && deferrable_sql?( sql )
       end
-
-      def update_sql(sql, name = nil) #:nodoc:
-        without_result do
-          super
-        end  
-        @connection.affected_rows
-      end  
-
-      def begin_db_transaction #:nodoc:
-        without_result do
-          execute "BEGIN"
-        end
-      rescue Exception
-        # Transactions aren't supported
+      
+      def deferrable_sql?( sql )
+        sql =~ DEFERRABLE_SQL
       end
-
-      def commit_db_transaction #:nodoc:
-        without_result do
-          execute "COMMIT"
-        end
-      rescue Exception
-        # Transactions aren't supported
+      
+      def initialized?
+        Object.const_defined?( 'Rails' ) && ::Rails.initialized?
       end
-
-      def rollback_db_transaction #:nodoc:
-        without_result do
-          execute "ROLLBACK"
-        end
-      rescue Exception
-        # Transactions aren't supported
+      
+      def open_transactions?
+        open_transactions != 0
       end
 
       private 
-
-      def without_result
-        begin
-          @connection.query_with_result = false
-          yield
-        ensure
-          @connection.query_with_result = true
-        end
-      end 
 
       def configure_connection
         super 

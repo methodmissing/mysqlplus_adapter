@@ -23,24 +23,29 @@ module ActiveRecord
     
     class Result < ActiveSupport::BasicObject
 
-      def initialize( &query )
-        @query = query
+      def initialize( sql, query_with_result )
+        @sql, @query_with_result = sql, query_with_result
         defer!
         self
       end
 
       def defer!
-        @result = Thread.new(@query) do |query|
-          begin
-            query.call    
-          ensure
-            ::ActiveRecord::Base.connection_pool.release_connection
-          end    
+        @result = Thread.new(@sql, @query_with_result) do |sql,query_with_result|
+          ::ActiveRecord::Base.connection_pool.with_connection do |conn|
+            puts "Socket: #{conn.socket.inspect}"
+            begin
+              conn.raw_connection.query_with_result = query_with_result
+              conn.raw_connection.c_async_query( sql )
+            rescue => exception
+              exception
+            end
+          end  
         end
       end
 
       def method_missing(*args, &block)
         @_result ||= @result.value
+        raise @_result if @_result.is_a?( Exception )
         @_result.send(*args, &block)
       end 
 
