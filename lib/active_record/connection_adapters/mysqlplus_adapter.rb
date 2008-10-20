@@ -11,8 +11,9 @@ module ActiveRecord
   module ConnectionAdapters
     class ConnectionPool
       attr_reader :connections, 
-                  :checked_out
-      
+                  :checked_out,
+                  :reserved_connections
+
       def initialize(spec)
         @spec = spec
         # The cache of reserved connections mapped to threads
@@ -28,7 +29,17 @@ module ActiveRecord
         @checked_out = []
         warmup! if spec.config[:warmup]
       end
-            
+
+      def checkout_existing_connection
+        existing = existing_connections()
+        c = existing.detect{|c| c.idle? } || existing.first
+        checkout_and_verify(c)
+      end
+
+      def existing_connections
+        @connections - @checked_out
+      end  
+
       private
       
         def warmup!
@@ -39,10 +50,16 @@ module ActiveRecord
             end
           end  
         end  
-     
+
     end  
   end    
 end    
+
+ActiveRecord::ConnectionAdapters::MysqlAdapter.class_eval do
+  def idle?
+    true
+  end
+end
 
 module ActiveRecord
   module ConnectionAdapters
@@ -52,6 +69,10 @@ module ActiveRecord
 
       def socket
         @connection.socket
+      end
+      
+      def idle?
+        @connection.idle?
       end
       
       def execute(sql, name = nil) #:nodoc:
