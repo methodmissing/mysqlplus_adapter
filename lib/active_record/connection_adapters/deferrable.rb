@@ -23,6 +23,7 @@ module ActiveRecord
       end
       
       def method_missing(*args, &block)
+        puts args.inspect
         @_result ||= @result.value
         raise @_result if @_result.is_a?( Exception )
         @_result.send(*args, &block)

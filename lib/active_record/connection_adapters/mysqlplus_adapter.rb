@@ -10,6 +10,7 @@ require 'active_record/connection_adapters/deferrable'
 module ActiveRecord
   module ConnectionAdapters
     class ConnectionPool
+      
       attr_reader :connections, 
                   :checked_out,
                   :reserved_connections
@@ -30,16 +31,6 @@ module ActiveRecord
         warmup! if spec.config[:warmup]
       end
 
-      def checkout_existing_connection
-        existing = existing_connections()
-        c = existing.detect{|c| c.idle? } || existing.first
-        checkout_and_verify(c)
-      end
-
-      def existing_connections
-        @connections - @checked_out
-      end  
-
       private
       
         def warmup!
@@ -54,12 +45,6 @@ module ActiveRecord
     end  
   end    
 end    
-
-ActiveRecord::ConnectionAdapters::MysqlAdapter.class_eval do
-  def idle?
-    true
-  end
-end
 
 module ActiveRecord
   module ConnectionAdapters
@@ -77,11 +62,7 @@ module ActiveRecord
       
       def execute(sql, name = nil) #:nodoc:
         log("(Socket #{socket.to_s}) #{sql}",name) do 
-          if deferrable?( sql )
-            ::ActiveRecord::Deferrable::Result.new( sql, @connection.query_with_result )  
-          else
-            @connection.c_async_query( sql )
-          end
+          @connection.c_async_query( sql )
         end
       end
       
