@@ -13,7 +13,9 @@ spec = Gem::Specification.new do |s|
   s.homepage = "http://blog.methodmissing.com"
   s.rubyforge_project = ""
   s.has_rdoc = false
-  s.files = ['mysqlplus_adapter.gemspec'] + Dir.glob('lib/active_record/connection_adapters/*')
+  s.files = ['mysqlplus_adapter.gemspec','Rakefile','README.textile'] 
+  s.files = Dir['lib/**/*.rb']
+  s.files << Dir['test/**/*']
 end
  
 if __FILE__ == $0
