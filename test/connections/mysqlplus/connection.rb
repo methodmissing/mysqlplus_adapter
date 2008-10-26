@@ -3,7 +3,7 @@ require "#{File.dirname(__FILE__)}/../../helper"
 require_dependency "#{AR_TEST_SUITE}/models/course"
 require 'logger'
 
-ActiveRecord::Base.logger = Logger.new("debug.log")
+ActiveRecord::Base.logger = Logger.new(StringIO.new)
 
 # GRANT ALL PRIVILEGES ON activerecord_unittest.* to 'rails'@'localhost';
 # GRANT ALL PRIVILEGES ON activerecord_unittest2.* to 'rails'@'localhost';
