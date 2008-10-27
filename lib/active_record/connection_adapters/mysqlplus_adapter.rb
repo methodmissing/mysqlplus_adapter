@@ -4,6 +4,13 @@ rescue LoadError
   $stderr.puts '!!! The mysqlplus gem is required!'
   raise
 end
+
+begin 
+  require_library_or_gem('fastthread')
+rescue => LoadError
+  $stderr.puts "!!! 'gem install fastthread' for better performance"
+end  
+
 require 'active_record/connection_adapters/mysqlplus_adapter/connection_pool'
 require 'active_record/connection_adapters/mysql_adapter'
 require 'active_record/connection_adapters/mysqlplus_adapter/deferrable/result'

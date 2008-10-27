@@ -9,6 +9,7 @@ module ActiveRecord
           ar_eigenclass::VALID_FIND_OPTIONS << :defer
           alias_deferred :find
           alias_deferred :find_by_sql
+          alias_deferred :preload_associations
         end
 
         private
@@ -26,6 +27,12 @@ module ActiveRecord
     end
 
     module SingletonMethods
+
+      def preload_associations_with_defer(records, associations, preload_options={})
+        ActiveRecord::Deferrable::Result.new do
+          preload_associations_without_defer(records, associations, preload_options={})
+        end
+      end
 
       def find_by_sql_with_defer( sql, defer = false )
         if defer
