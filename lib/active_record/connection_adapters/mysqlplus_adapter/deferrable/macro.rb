@@ -29,9 +29,13 @@ module ActiveRecord
     module SingletonMethods
 
       def preload_associations_with_defer(records, associations, preload_options={})
-        ActiveRecord::Deferrable::Result.new do
+        if preload_options.key?(:defer)
+          ActiveRecord::Deferrable::Result.new do
+            preload_associations_without_defer(records, associations, preload_options={})
+          end
+        else
           preload_associations_without_defer(records, associations, preload_options={})
-        end
+        end    
       end
 
       def find_by_sql_with_defer( sql, defer = false )
@@ -46,7 +50,7 @@ module ActiveRecord
 
       def find_with_defer( *args )
         options = args.dup.extract_options!
-        if options[:defer]
+        if options.key?(:defer)
           ActiveRecord::Deferrable::Result.new do 
             find_without_defer(*args)
           end
