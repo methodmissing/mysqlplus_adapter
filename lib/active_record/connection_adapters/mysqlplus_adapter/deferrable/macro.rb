@@ -7,20 +7,20 @@ module ActiveRecord
         def install!
           ActiveRecord::Base.send :extend, SingletonMethods      
           ar_eigenclass::VALID_FIND_OPTIONS << :defer
-          alias_deferred :find
-          alias_deferred :find_by_sql
-          alias_deferred :preload_associations
+          alias_deferred :find, :find_by_sql, :preload_associations
         end
 
         private
 
-        def ar_eigenclass
-          (class << ActiveRecord::Base; self; end)
-        end
+          def ar_eigenclass
+            @@ar_eigneclass ||= (class << ActiveRecord::Base; self; end)
+          end
 
-        def alias_deferred( method_signature ) 
-          ar_eigenclass.alias_method_chain method_signature, :defer
-        end
+          def alias_deferred( *method_signatures )
+            method_signatures.each do |method_signature| 
+              ar_eigenclass.alias_method_chain method_signature, :defer
+            end
+          end
 
       end
 
@@ -51,13 +51,21 @@ module ActiveRecord
       def find_with_defer( *args )
         options = args.dup.extract_options!
         if options.key?(:defer)
-          ActiveRecord::Deferrable::Result.new do 
-            find_without_defer(*args)
-          end
+          with_deferred_scope do
+            ActiveRecord::Deferrable::Result.new do 
+              find_without_defer(*args)
+            end
+          end  
         else
           find_without_defer(*args)
         end    
       end  
+
+      private
+      
+        def with_deferred_scope( &block )
+          with_scope( { :find => { :defer => true } }, :merge, &block )
+        end
 
     end
 

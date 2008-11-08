@@ -30,10 +30,14 @@ module ActiveRecord
         @connection.idle?
       end
       
-      def execute(sql, name = nil) #:nodoc:
-        log("(Socket #{socket.to_s}) #{sql}",name) do 
+      def execute(sql, name = nil, skip_logging = false) #:nodoc:
+        if skip_logging
           @connection.c_async_query( sql )
-        end
+        else  
+          log("(Socket #{socket.to_s}) #{sql}",name) do 
+            @connection.c_async_query( sql )
+          end
+        end  
       end
       
       def deferrable?( sql )
