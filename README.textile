@@ -1,6 +1,6 @@
 <h1>Mysqlplus ActiveRecord Adapter</h1>
 
-<h2>Rails 2.2 connection pools</h2>
+<h2>Rails 2.2+ connection pools</h2>
 
 Here's preliminary results with the default pool size of 5 connections.
 

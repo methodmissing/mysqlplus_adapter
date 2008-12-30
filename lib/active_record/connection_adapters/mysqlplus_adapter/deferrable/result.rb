@@ -2,15 +2,14 @@ module ActiveRecord
   module Deferrable
     class Result < ActiveSupport::BasicObject
 
-      def initialize( &payload )
-        @payload = payload
-        defer!
+      def initialize( &deferrable )
+        defer!( deferrable )
       end
 
-      def defer!
-        @result = Thread.new(@payload) do |payload|
+      def defer!( deferrable )
+        @result = Thread.new( deferrable ) do |deferrable|
           begin
-            payload.call 
+            deferrable.call 
           rescue => exception
             exception  
           ensure
