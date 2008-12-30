@@ -27,8 +27,7 @@ module ActiveRecord
         def warmup!
           @connection_mutex.synchronize do
             1.upto(@size) do
-              c = new_connection
-              @connections << c
+              @connections << new_connection
             end
           end  
         end  

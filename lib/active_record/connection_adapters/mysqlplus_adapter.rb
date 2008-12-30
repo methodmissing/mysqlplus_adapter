@@ -1,26 +1,28 @@
 begin
   require_library_or_gem('mysqlplus')
 rescue LoadError
-  $stderr.puts '!!! The mysqlplus gem is required!'
-  raise
+  $stderr.puts "The mysqlplus gem is required!"
+  $stderr.puts "'git clone git@github.com:oldmoe/mysqlplus.git && cd mysqlplus && rake'"
+  $stderr.puts "There's some experimental GC patches available @ http://github.com/oldmoe/mysqlplus/tree/with_async_validation - the mysql gem forces GC every 20 queries, that's a guaranteed GC cycle every 5th request for a request with a 4 query overhead."  
+  exit
 end
 
 begin 
   require_library_or_gem('fastthread')
 rescue => LoadError
-  $stderr.puts "!!! 'gem install fastthread' for better performance"
+  $stderr.puts "'gem install fastthread' for better performance"
 end  
 
-require 'active_record/connection_adapters/mysqlplus_adapter/connection_pool'
-require 'active_record/connection_adapters/mysql_adapter'
-require 'active_record/connection_adapters/mysqlplus_adapter/deferrable/result'
-require 'active_record/connection_adapters/mysqlplus_adapter/deferrable/macro'
+[ "mysqlplus_adapter/connection_pool",
+  "mysql_adapter",
+  "mysqlplus_adapter/deferrable/result",
+  "mysqlplus_adapter/deferrable/macro" ].each{|l| require "active_record/connection_adapters/#{l}" }
 
 module ActiveRecord
   module ConnectionAdapters
     class MysqlplusAdapter < ActiveRecord::ConnectionAdapters::MysqlAdapter
       
-      DEFERRABLE_SQL = /^(INSERT|UPDATE|ALTER|DROP|SELECT|DELETE|RENAME|REPLACE|TRUNCATE)/i
+      DEFERRABLE_SQL = /^(INSERT|UPDATE|ALTER|DROP|SELECT|DELETE|RENAME|REPLACE|TRUNCATE)/i.freeze
 
       def socket
         @connection.socket
@@ -30,14 +32,20 @@ module ActiveRecord
         @connection.idle?
       end
       
-      def execute(sql, name = nil) #:nodoc:
-        log("(Socket #{socket.to_s}) #{sql}",name) do 
+      def execute(sql, name = nil, skip_logging = false) #:nodoc:
+        if skip_logging
           @connection.c_async_query( sql )
-        end
+        else  
+          log("(Socket #{socket.to_s}) #{sql}",name) do 
+            @connection.c_async_query( sql )
+          end
+        end  
       end
       
       def deferrable?( sql )
-        !open_transactions? && initialized? && deferrable_sql?( sql )
+        !open_transactions? && 
+        initialized? && 
+        deferrable_sql?( sql )
       end
       
       def deferrable_sql?( sql )
@@ -56,7 +64,11 @@ module ActiveRecord
 
       def configure_connection
         super 
-        @connection.disable_gc = true
+        @connection.disable_gc = true if disable_gc? 
+      end
+      
+      def disable_gc?
+        @connection.respond_to?( :disable_gc= )
       end
  
     end

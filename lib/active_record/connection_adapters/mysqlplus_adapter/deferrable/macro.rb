@@ -51,13 +51,23 @@ module ActiveRecord
       def find_with_defer( *args )
         options = args.dup.extract_options!
         if options.key?(:defer)
-          ActiveRecord::Deferrable::Result.new do 
-            find_without_defer(*args)
-          end
+          deferred_scope do
+            ActiveRecord::Deferrable::Result.new do 
+              find_without_defer(*args)
+            end
+          end  
         else
           find_without_defer(*args)
         end    
       end  
+
+      private
+      
+        def deferred_scope
+          with_scope( :find => { :defer => true } ) do
+            yield
+          end  
+        end
 
     end
 
