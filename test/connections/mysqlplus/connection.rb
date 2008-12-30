@@ -15,14 +15,14 @@ ActiveRecord::Base.configurations = {
     :encoding => 'utf8',
     :database => 'activerecord_unittest',
     :pool => 5,
-    :warmup => true
+    :warmup => false
   },
   'arunit2' => {
     :adapter  => 'mysqlplus',
     :username => 'rails',
     :database => 'activerecord_unittest2',
     :pool => 5,
-    :warmup => true
+    :warmup => false
   }
 }
 
