@@ -19,11 +19,14 @@ module ActiveRecord
         @size = (spec.config[:pool] && spec.config[:pool].to_i) || 5
         @connections = []
         @checked_out = []
+        # warmup hook
         warmup! if spec.config[:warmup]
       end
 
       private
       
+        # Establish ( warmup ) all connections for this pool in advance.
+        #
         def warmup!
           @connection_mutex.synchronize do
             1.upto(@size) do

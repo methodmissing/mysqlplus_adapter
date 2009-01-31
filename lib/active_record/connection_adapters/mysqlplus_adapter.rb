@@ -1,9 +1,11 @@
 begin
   require_library_or_gem('mysqlplus')
 rescue LoadError
-  $stderr.puts "The mysqlplus gem is required!"
-  $stderr.puts "'git clone git@github.com:oldmoe/mysqlplus.git && cd mysqlplus && rake'"
-  $stderr.puts "There's some experimental GC patches available @ http://github.com/oldmoe/mysqlplus/tree/with_async_validation - the mysql gem forces GC every 20 queries, that's a guaranteed GC cycle every 5th request for a request with a 4 query overhead."  
+  $stderr.puts <<-EOS
+        The mysqlplus gem is required!
+        'git clone git@github.com:oldmoe/mysqlplus.git && cd mysqlplus && rake'
+        There's some experimental GC patches available @ http://github.com/oldmoe/mysqlplus/tree/with_async_validation - the mysql gem forces GC every 20 queries, that's a guaranteed GC cycle every 5th request for a request with a 4 query overhead.
+      EOS
   exit
 end
 
@@ -24,12 +26,10 @@ module ActiveRecord
       
       DEFERRABLE_SQL = /^(INSERT|UPDATE|ALTER|DROP|SELECT|DELETE|RENAME|REPLACE|TRUNCATE)/i.freeze
 
+      # Accessor for the raw connection socket for integration with EventMachine etc.
+      # 
       def socket
         @connection.socket
-      end
-      
-      def idle?
-        @connection.idle?
       end
       
       def execute(sql, name = nil, skip_logging = false) #:nodoc:
@@ -42,34 +42,44 @@ module ActiveRecord
         end  
       end
       
+      # Determine if a given SQL snippet is deferrable to another Thread.
+      #
       def deferrable?( sql )
         !open_transactions? && 
         initialized? && 
         deferrable_sql?( sql )
       end
       
+      # Determine if the raw SQL can be deferred.This excludes changing users,
+      # retrieving column information, per connection configuration etc.
+      #
       def deferrable_sql?( sql )
         sql =~ DEFERRABLE_SQL
       end
       
+      # Only support deferring connections once the framework has been initialized.
+      #
       def initialized?
         Object.const_defined?( 'Rails' ) && ::Rails.initialized?
       end
       
+      # Are there any open transactions ? 
+      #
       def open_transactions?
         open_transactions != 0
       end
 
       private 
 
-      def configure_connection
-        super 
-        @connection.disable_gc = true if disable_gc? 
-      end
+        def configure_connection #:nodoc:
+          super 
+          @connection.disable_gc = true if disable_gc? 
+        end
       
-      def disable_gc?
-        @connection.respond_to?( :disable_gc= )
-      end
+        # See http://github.com/oldmoe/mysqlplus/tree/with_async_validation
+        def disable_gc? #:nodoc:
+          @connection.respond_to?( :disable_gc= )
+        end
  
     end
   end

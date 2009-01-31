@@ -1,15 +1,26 @@
-<h1>Mysqlplus ActiveRecord Adapter</h1>
+h1. Mysqlplus ActiveRecord Adapter
 
-<h2>Rails 2.2+ connection pools</h2>
+h2. Installation
 
-Here's preliminary results with the default pool size of 5 connections.
+Grab mysqlplus :
 
-<pre><code>
->> threads = []
-=> []
->> 5.times{ threads << Thread.new{ ActiveRecord::Base.connection.execute("SELECT sleep(1)") } } 
-=> 5
->> Benchmark.measure{ threads.each{|t| t.join } }
-=> #<Benchmark::Tms:0x83cb22c @cstime=0.0, @cutime=0.0, @total=0.0199999999999978, @label="", @stime=0.00999999999999979, 
-@real=1.06578612327576, @utime=0.00999999999999801>
-</code></pre>
+  git clone git://github.com/oldmoe/mysqlplus.git
+  cd mysqlplus
+  rake  
+
+... and mysqlplus_adapter ...
+
+  git clone git://github.com/methodmissing/mysqlplus_adapter_.git
+  gem build mysqlplus_adapter.gemspec
+  sudo gem install mysqlplus_adapter-0.1.gem 
+
+and update config/database.yml
+
+  production:
+    adapter:  mysqlplus
+    database: myapp_production
+    username: root
+    password:  
+    host: localhost
+    pool: 10
+    warmup: true
