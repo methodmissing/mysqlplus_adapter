@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'active_support'
 require 'activerecord'
+ActiveRecord.load_all!
 
 module Mysqlplus
   class Test

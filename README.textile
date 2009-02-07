@@ -2,7 +2,7 @@ h1. Mysqlplus ActiveRecord Adapter
 
 h2. Installation
 
-Grab mysqlplus :
+Grab mysqlplus  ....
 
   git clone git://github.com/oldmoe/mysqlplus.git
   cd mysqlplus
@@ -10,11 +10,9 @@ Grab mysqlplus :
 
 ... and mysqlplus_adapter ...
 
-  git clone git://github.com/methodmissing/mysqlplus_adapter_.git
-  gem build mysqlplus_adapter.gemspec
-  sudo gem install mysqlplus_adapter-0.1.gem 
+  sudo gem install methodmissing-mysqlplus_adapter -s http://gems.github.com
 
-and update config/database.yml
+... then update config/database.yml
 
   production:
     adapter:  mysqlplus
@@ -23,4 +21,69 @@ and update config/database.yml
     password:  
     host: localhost
     pool: 10
+
+h2. Why Bother ?
+
+The mysqlplus gem ( a fork of mysql-2.8.4pre ) exposes an asynchronous API that lends itself very well to decoupling the stock Mysql protocol into full duplex in a multi-threaded environment.
+
+The ever popular "mysql ruby":http://www.tmtm.org/en/mysql/ruby/ do *not* schedule Threads and thus lock the whole MRI interpreter for any database I/O from within a given process.
+
+Rails since release 2.2 support connection pooling and Thread safety ( at the framework level mind you, plugins, gems and user code aside ) through :
+
+  config.threadsafe!
+
+This configuration hook removes the global Dispatcher lock and yields one connection from the pool per request / response cycle. 
+
+You'll need mysqplus and this adapter to get around the MRI lock with mysql ruby.
+
+h2. Configuration Options
+
+An additional connection specification element, *warmup* is available that attempts to establish the pooled connections in advance.This may be useful for high traffic environments where it makes sense to setup connections when bouncing the App and not let initial incoming requests be hogged with Mysql connection overheads.
+
+  production:
+    adapter:  mysqlplus
+    database: myapp_production
+    username: root
+    password:  
+    host: localhost
+    pool: 10  
     warmup: true
+
+h3. Deferrable Results
+
+Deferred results simulate lazy loading in a background Thread, through another Mysql connection, other than the one the current Thread has acquired.This type of workflow assumes a decent Connection Pool size of 5 to 10 connections.
+
+  # Immediate yield control back to the current Thread as the query is pushed to the background.
+  # Yields an instance of ActiveRecord::Deferrable::Result
+  #
+  Post.find( :first, :defer => true )
+
+A deferred result blocks when any method's invoked on the result set right away.
+
+  Post.find( :first, :defer => true ).title
+
+This concept is quite useful in an MVC context, allowing the controller to fetch results, defer fetching them to the background and reference them in the view, allowing an undefined period / time slice during which rendering, template setup etc. may occur. 
+
+  class PostsController
+   
+    def index
+      # No blocking, executes in the background, yields a deferrable result.
+      #
+      @posts = Posts.published.find(:all, :defer => true )
+    end
+
+  end
+
+Since ActiveRecord 2.1 preloading favors multiple efficient queries to cumbersome and mostly slow JOINs.Those secondary queries can easily be pushed down different connections.
+
+  # Use 3 connections from the pool : 1 x Post, 1 x Comment and 1 x Vote 
+  #
+  Post.find(:all, :limit => 10, :include => [:comments, :votes], :defer => true )
+
+h2. Garbage Collection
+
+There's some experimental GC patches "available":http://github.com/oldmoe/mysqlplus/tree/with_async_validation - the mysql ruby gem forces GC every 20 queries, that's a guaranteed GC cycle every 5th request for a request with a 4 query overhead.
+
+h2. Stability
+
+In (pre)-production use at a handful of sites and the test suite is designed to run against the existing ActiveRecord suite.

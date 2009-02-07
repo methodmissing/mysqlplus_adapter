@@ -41,10 +41,10 @@ module ActiveRecord
       def preload_associations_with_defer(records, associations, preload_options={})
         if preload_options.key?(:defer)
           ActiveRecord::Deferrable::Result.new do
-            preload_associations_without_defer(records, associations, preload_options={})
+            preload_associations_without_defer(records, associations, preload_options)
           end
         else
-          preload_associations_without_defer(records, associations, preload_options={})
+          preload_associations_without_defer(records, associations, preload_options)
         end    
       end
 

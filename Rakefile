@@ -38,3 +38,17 @@ end
 task :build_mysqlplus_databases => 'mysqlplus:build_databases'
 task :drop_mysqlplus_databases => 'mysqlplus:drop_databases'
 task :rebuild_mysqlplus_databases => 'mysqlplus:rebuild_databases'
+
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |s|
+    s.name = "mysqlplus_adapter"
+    s.summary = "ActiveRecord Mysqlplus Adapter"
+    s.email = "lourens@methodmissing.com"
+    s.homepage = "http://github.com/methodmissing/mysqplus_adapter"
+    s.description = "ActiveRecord Mysqlplus Adapter"
+    s.authors = ["Lourens Naudé"]
+  end
+rescue LoadError
+  puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+end
