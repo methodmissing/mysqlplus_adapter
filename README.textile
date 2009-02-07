@@ -87,3 +87,9 @@ There's some experimental GC patches "available":http://github.com/oldmoe/mysqlp
 h2. Stability
 
 In (pre)-production use at a handful of sites and the test suite is designed to run against the existing ActiveRecord suite.
+
+h2. TODO
+
+* Experiment with turning off query_with_result for certain queries.
+
+* Deferred inserts / updates - *dangerous* INSERT DELAYED for Innodb
