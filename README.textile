@@ -82,7 +82,7 @@ Since ActiveRecord 2.1 preloading favors multiple efficient queries to cumbersom
 
 h2. Garbage Collection
 
-There's some experimental GC patches "available":http://github.com/oldmoe/mysqlplus/tree/with_async_validation - the mysql ruby gem forces GC every 20 queries, that's a guaranteed GC cycle every 5th request for a request with a 4 query overhead.
+There's some experimental GC patches "available":http://github.com/oldmoe/mysqlplus/tree/with_async_validation - the mysql ruby gem forces GC every 20 queries, that's a guaranteed GC cycle every 5th request for a request with a 4 query overhead.This adapter will automatically detect the presence of those patches and disable the forced GC runs.
 
 h2. Stability
 
