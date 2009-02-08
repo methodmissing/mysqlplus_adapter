@@ -36,7 +36,7 @@ module ActiveRecord
         if skip_logging
           @connection.c_async_query( sql )
         else  
-          log("(Socket #{socket.to_s}) #{sql}",name) do 
+          log("(Socket #{socket.to_s}, Thread #{Thread.current.object_id.to_s}) #{sql}",name) do 
             @connection.c_async_query( sql )
           end
         end  

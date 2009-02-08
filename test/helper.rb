@@ -1,6 +1,8 @@
 require 'rubygems'
 require 'active_support'
+require 'active_support/test_case'
 require 'activerecord'
+
 ActiveRecord.load_all!
 
 module Mysqlplus
@@ -32,7 +34,7 @@ module Mysqlplus
       end
 
       def test_files
-        glob( "#{File.dirname(__FILE__)}/*_test.rb" )
+        glob( "#{File.dirname(__FILE__)}/**/*_test.rb" )
       end
 
       private

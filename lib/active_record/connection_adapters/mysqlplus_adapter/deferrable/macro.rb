@@ -7,7 +7,7 @@ module ActiveRecord
         def install!
           ActiveRecord::Base.send :extend, SingletonMethods      
           ar_eigenclass::VALID_FIND_OPTIONS << :defer
-          alias_deferred :find, :find_by_sql, :preload_associations
+          alias_deferred :find, :find_by_sql, :preload_associations, :find_every
         end
 
         private
@@ -35,13 +35,26 @@ module ActiveRecord
       # connection.
       # 
       # ....
-      # Record.find(:first, :include => [:other. :another], :defer => true)
+      # Record.find(:first, :include => [:other, :another], :defer => true)
       # .... 
       #
       def preload_associations_with_defer(records, associations, preload_options={})
         if preload_options.key?(:defer)
-          ActiveRecord::Deferrable::Result.new do
-            preload_associations_without_defer(records, associations, preload_options)
+          records = [records].flatten.compact.uniq
+          return if records.empty?
+          case associations
+          when Array then associations.each {|association| ActiveRecord::Deferrable::Result.new{ preload_associations(records, association, preload_options) } }
+          when Symbol, String then ActiveRecord::Deferrable::Result.new{ preload_one_association(records, associations.to_sym, preload_options) }
+          when Hash then
+            associations.each do |parent, child|
+              raise "parent must be an association name" unless parent.is_a?(String) || parent.is_a?(Symbol)
+              preload_associations(records, parent, preload_options)
+              reflection = reflections[parent]
+              parents = records.map {|record| record.send(reflection.name)}.flatten.compact
+              unless parents.empty?
+                parents.first.class.preload_associations(parents, child)
+              end
+            end
           end
         else
           preload_associations_without_defer(records, associations, preload_options)
@@ -89,6 +102,22 @@ module ActiveRecord
         #
         def with_deferred_scope( &block ) #:nodoc:
           with_scope( { :find => { :defer => true } }, :merge, &block )
+        end
+
+        def find_every_with_defer(options) #:nodoc:
+          include_associations = merge_includes(scope(:find, :include), options[:include])
+          if include_associations.any? && references_eager_loaded_tables?(options)
+            records = find_with_associations(options)
+          else
+            records = find_by_sql(construct_finder_sql(options))
+            if include_associations.any?
+              preload_associations(records, include_associations, options)
+            end
+          end
+
+          records.each { |record| record.readonly! } if options[:readonly]
+
+          records
         end
 
     end
