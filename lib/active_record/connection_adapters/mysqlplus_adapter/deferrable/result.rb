@@ -16,7 +16,6 @@ module ActiveRecord
       #
       def defer!( deferrable )
         @result = Thread.new( deferrable ) do |deferrable|
-          puts '*'
           begin
             deferrable.call 
           rescue => exception

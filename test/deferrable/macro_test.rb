@@ -1,7 +1,13 @@
 require "#{File.dirname(__FILE__)}/../helper"
 Mysqlplus::Test.prepare!
 
-class MacroTest < ActiveSupport::TestCase
+class MacroTest < ActiveRecord::TestCase
+
+  def teardown
+    ActiveRecord::Base.clear_all_connections!
+    ActiveRecord::Base.establish_connection(Mysqlplus::Test::CONNECTION)
+    super
+  end
 
   def test_should_be_able_to_find_records_in_a_background_thread
     ActiveRecord::Base.connection_pool.expects(:release_connection).twice 
@@ -16,7 +22,8 @@ class MacroTest < ActiveSupport::TestCase
 
   def test_should_be_able_to_preload_related_records_on_multiple_connections
     ActiveRecord::Base.connection_pool.expects(:release_connection).twice
-    assert_instance_of MysqlUser, MysqlUser.find( :first, :defer => true, :include => [:mysql_user_info])
+    assert_instance_of MysqlUser, MysqlUser.find( :first, :defer => true, :include => :mysql_user_info)
+    sleep(0.5)
   end
     
 end

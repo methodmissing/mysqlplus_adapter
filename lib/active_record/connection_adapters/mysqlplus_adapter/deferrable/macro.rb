@@ -39,11 +39,12 @@ module ActiveRecord
       # .... 
       #
       def preload_associations_with_defer(records, associations, preload_options={})
-        if preload_options.key?(:defer)
+        if preload_deferred?( associations )        
+          associations.delete(:defer)
           records = [records].flatten.compact.uniq
           return if records.empty?
           case associations
-          when Array then associations.each {|association| ActiveRecord::Deferrable::Result.new{ preload_associations(records, association, preload_options) } }
+          when Array then associations.each {|association| ActiveRecord::Deferrable::Result.new{ preload_associations_without_defer(records, association, preload_options) } }
           when Symbol, String then ActiveRecord::Deferrable::Result.new{ preload_one_association(records, associations.to_sym, preload_options) }
           when Hash then
             associations.each do |parent, child|
@@ -111,13 +112,28 @@ module ActiveRecord
           else
             records = find_by_sql(construct_finder_sql(options))
             if include_associations.any?
-              preload_associations(records, include_associations, options)
+              preload_associations(records, preload_deferred_includes( include_associations, options ))
             end
           end
 
           records.each { |record| record.readonly! } if options[:readonly]
 
           records
+        end
+
+        def preload_deferred_includes( include_associations, options )
+          options[:defer] ? (Array(include_associations) << :defer) : include_associations
+        end
+
+        def preload_deferred?( associations ) #:nodoc:
+          begin
+            associations.respond_to?(:include?) && associations.include?(:defer)
+          rescue TypeError
+            #failing test cases :
+            # * test_eager_with_valid_association_as_string_not_symbol(EagerAssociationTest) && 
+            # * test_eager_with_invalid_association_reference(EagerAssociationTest)            
+            false
+          end
         end
 
     end

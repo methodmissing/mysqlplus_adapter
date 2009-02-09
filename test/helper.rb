@@ -8,6 +8,12 @@ ActiveRecord.load_all!
 module Mysqlplus
   class Test
     
+    CONNECTION = { :adapter  => 'mysqlplus',
+                   :username => 'root',
+                   :database => 'mysql',
+                   :pool => 5,
+                   :warmup => true }
+    
     MODELS_DIR = "#{File.dirname(__FILE__)}/models".freeze
     
     class << self
@@ -40,11 +46,7 @@ module Mysqlplus
       private
 
       def connect!
-        ::ActiveRecord::Base.establish_connection( :adapter  => 'mysqlplus',
-                                                   :username => 'root',
-                                                   :database => 'mysql',
-                                                   :pool => 5,
-                                                   :warmup => true )
+        ::ActiveRecord::Base.establish_connection( CONNECTION )
       end
 
       def require_models
