@@ -93,5 +93,3 @@ h2. TODO
 * Experiment with turning off query_with_result for certain queries.
 
 * Deferred inserts / updates - *dangerous* INSERT DELAYED for Innodb
-
-* 1.9 compatibility testing
