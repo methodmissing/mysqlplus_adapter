@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'mocha'
 require 'active_support'
 require 'active_support/test_case'
 require 'activerecord'
@@ -8,11 +9,11 @@ ActiveRecord.load_all!
 module Mysqlplus
   class Test
     
-    CONNECTION = { :adapter  => 'mysqlplus',
-                   :username => 'root',
-                   :database => 'mysql',
-                   :pool => 5,
-                   :warmup => true }
+    CONNECTION_SPEC = { :adapter  => 'mysqlplus',
+                        :username => 'root',
+                        :database => 'mysql',
+                        :pool => 5,
+                        :warmup => true }
     
     MODELS_DIR = "#{File.dirname(__FILE__)}/models".freeze
     
@@ -46,7 +47,7 @@ module Mysqlplus
       private
 
       def connect!
-        ::ActiveRecord::Base.establish_connection( CONNECTION )
+        ::ActiveRecord::Base.establish_connection( CONNECTION_SPEC )
       end
 
       def require_models

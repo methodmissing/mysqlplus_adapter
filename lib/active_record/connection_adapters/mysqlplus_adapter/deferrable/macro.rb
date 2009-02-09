@@ -121,7 +121,7 @@ module ActiveRecord
           records
         end
 
-        def preload_deferred_includes( include_associations, options )
+        def preload_deferred_includes( include_associations, options ) #:nodoc:
           options[:defer] ? (Array(include_associations) << :defer) : include_associations
         end
 

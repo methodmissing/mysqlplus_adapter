@@ -15,7 +15,7 @@ module ActiveRecord
       # back in on completion.
       #
       def defer!( deferrable )
-        @result = Thread.new( deferrable ) do |deferrable|
+        @result = ::Thread.new( deferrable ) do |deferrable|
           begin
             deferrable.call 
           rescue => exception
@@ -38,7 +38,7 @@ module ActiveRecord
       # Re-raise any Exceptions from the background Thread.
       #
       def validate!
-        raise @_result if @_result.is_a?( Exception )
+        raise @_result if @_result.is_a?( ::Exception )
       end
 
     end    

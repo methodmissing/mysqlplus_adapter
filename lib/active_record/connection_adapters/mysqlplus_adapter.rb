@@ -11,7 +11,7 @@ end
 
 begin 
   require_library_or_gem('fastthread')
-rescue => LoadError
+rescue LoadError
   $stderr.puts "'gem install fastthread' for better performance"
 end  
 

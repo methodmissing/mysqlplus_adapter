@@ -1,11 +1,12 @@
 require "#{File.dirname(__FILE__)}/../helper"
+
 Mysqlplus::Test.prepare!
 
-class MacroTest < ActiveRecord::TestCase
+class MacroTest < ActiveSupport::TestCase
 
   def teardown
     ActiveRecord::Base.clear_all_connections!
-    ActiveRecord::Base.establish_connection(Mysqlplus::Test::CONNECTION)
+    ActiveRecord::Base.establish_connection( Mysqlplus::Test::CONNECTION_SPEC )
     super
   end
 
