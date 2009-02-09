@@ -14,6 +14,8 @@ Grab mysqlplus  ....
 
 ... then update config/database.yml
 
+<pre>
+<code>
   production:
     adapter:  mysqlplus
     database: myapp_production
@@ -21,6 +23,8 @@ Grab mysqlplus  ....
     password:  
     host: localhost
     pool: 10
+</code>
+</pre>
 
 h2. Why Bother ?
 
@@ -30,7 +34,11 @@ The ever popular "mysql ruby":http://www.tmtm.org/en/mysql/ruby/ do *not* schedu
 
 Rails since release 2.2 support connection pooling and Thread safety ( at the framework level mind you, plugins, gems and user code aside ) through :
 
+<pre>
+<code>
   config.threadsafe!
+</code>
+</pre>
 
 This configuration hook removes the global Dispatcher lock and yields one connection from the pool per request / response cycle. 
 
@@ -40,6 +48,8 @@ h2. Configuration Options
 
 An additional connection specification element, *warmup* is available that attempts to establish the pooled connections in advance.This may be useful for high traffic environments where it makes sense to setup connections when bouncing the App and not let initial incoming requests be hogged with Mysql connection overheads.
 
+<pre>
+<code>
   production:
     adapter:  mysqlplus
     database: myapp_production
@@ -48,22 +58,34 @@ An additional connection specification element, *warmup* is available that attem
     host: localhost
     pool: 10  
     warmup: true
+</code>
+</pre>
 
 h3. Deferrable Results
 
 Deferred results simulate lazy loading in a background Thread, through another Mysql connection, other than the one the current Thread has acquired.This type of workflow assumes a decent Connection Pool size of 5 to 10 connections.
 
+<pre>
+<code>
   # Immediate yield control back to the current Thread as the query is pushed to the background.
   # Yields an instance of ActiveRecord::Deferrable::Result
   #
   Post.find( :first, :defer => true )
+</code>
+</pre>
 
 A deferred result blocks when any method's invoked on the result set right away.
 
+<pre>
+<code>
   Post.find( :first, :defer => true ).title
+</code>
+</pre>
 
 This concept is quite useful in an MVC context, allowing the controller to fetch results, defer fetching them to the background and reference them in the view, allowing an undefined period / time slice during which rendering, template setup etc. may occur. 
 
+<pre>
+<code>
   class PostsController
    
     def index
@@ -73,12 +95,18 @@ This concept is quite useful in an MVC context, allowing the controller to fetch
     end
 
   end
+</code>
+</pre>
 
 Since ActiveRecord 2.1 preloading favors multiple efficient queries to cumbersome and mostly slow JOINs.Those secondary queries can easily be pushed down different connections.
 
+<pre>
+<code>
   # Use 3 connections from the pool : 1 x Post, 1 x Comment and 1 x Vote 
   #
   Post.find(:all, :limit => 10, :include => [:comments, :votes], :defer => true )
+</code>
+</pre>
 
 h2. Garbage Collection
 
