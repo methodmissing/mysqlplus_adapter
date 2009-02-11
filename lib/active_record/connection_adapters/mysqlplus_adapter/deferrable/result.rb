@@ -19,7 +19,7 @@ module ActiveRecord
           begin
             deferrable.call 
           rescue => exception
-            exception  
+            exception 
           ensure
             ::ActiveRecord::Base.connection_pool.release_connection            
           end

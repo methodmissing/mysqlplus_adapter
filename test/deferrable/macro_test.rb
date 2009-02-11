@@ -10,18 +10,18 @@ class MacroTest < ActiveSupport::TestCase
     super
   end
 
-  def test_should_be_able_to_find_records_in_a_background_thread
+  test "should be able to find records in a background thread" do
     ActiveRecord::Base.connection_pool.expects(:release_connection).twice 
     assert_equal MysqlUser.find(:first, :defer => true), MysqlUser.find(:first) 
     assert_instance_of MysqlUser, MysqlUser.find(:first, :defer => true)
   end
 
-  def test_should_be_able_to_find_records_by_sql_background_thread
+  test "should be able to find records by sql background thread" do
     ActiveRecord::Base.connection_pool.expects(:release_connection).once    
     assert_equal MysqlUser.find_by_sql("SELECT * FROM mysql.user WHERE User = 'root'", true), MysqlUser.find(:all, :conditions => ['user.User = ?', 'root'])
   end
 
-  def test_should_be_able_to_preload_related_records_on_multiple_connections
+  test "should be able to preload related records on multiple connections" do
     ActiveRecord::Base.connection_pool.expects(:release_connection).twice
     assert_instance_of MysqlUser, MysqlUser.find( :first, :defer => true, :include => :mysql_user_info)
     sleep(0.5)
