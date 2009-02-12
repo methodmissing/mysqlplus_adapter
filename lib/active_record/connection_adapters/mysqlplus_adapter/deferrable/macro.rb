@@ -7,6 +7,7 @@ module ActiveRecord
         def install!
           ActiveRecord::Base.send :extend, SingletonMethods      
           ar_eigenclass::VALID_FIND_OPTIONS << :defer
+          ActiveRecord::Calculations::CALCULATIONS_OPTIONS << :defer
           alias_deferred :find, :find_by_sql, :preload_associations, :find_every
         end
 
