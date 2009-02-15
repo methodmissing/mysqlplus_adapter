@@ -15,7 +15,7 @@ module ActiveRecord
       # back in on completion.
       #
       def defer!( deferrable )
-        @result = ::Thread.new( deferrable ) do |deferrable|
+        @result = ::Thread.new do
           begin
             deferrable.call 
           rescue => exception
