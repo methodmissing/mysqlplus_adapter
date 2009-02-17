@@ -32,6 +32,24 @@ module ActiveRecord
         @connection.socket
       end
       
+      # Send a query in an async non-blocking manner
+      #
+      def send_query( sql, name = nil, skip_logging = false )
+        if skip_logging
+          @connection.send_query( sql )
+        else  
+          log("(Socket #{socket.to_s}, Thread #{Thread.current.object_id.to_s}) #{sql}",name) do 
+            @connection.send_query( sql )
+          end
+        end
+      end
+      
+      # Retrieve a #send_query result set
+      #
+      def get_result
+        @connection.get_result
+      end
+      
       def execute(sql, name = nil, skip_logging = false) #:nodoc:
         if skip_logging
           @connection.c_async_query( sql )
