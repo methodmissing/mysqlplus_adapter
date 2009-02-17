@@ -130,6 +130,27 @@ Without GC   0.040000   0.010000   0.050000 (  0.311233)
 </code>
 </pre>
 
+h2. Asynchronous abilities
+
+The adapter exposes Mysqplus's async interface through the connection instance.
+<pre>
+<code>
+MysqlUser.connection.send_query( "SELECT * FROM mysql.user WHERE User = 'root'" ) # Returns right away, no IO wait
+MysqlUser.connection.get_result # Retrieves the result from the previous async query
+</code>
+</pre>
+ 
+Be very careful with this feature :
+<pre>
+<code>
+Model.connection.send_query( "first query" )
+Model.connection.send_query( "second query" )
+Model.connection.get_result # Resultset of "second query"
+</code>
+</pre>
+
+Abuse may also lead to server side temporary tables not being properly cleaned up, although this effect is partially negated by the Connection Pool's check in / check out feature which switches the current mysql user session back to itself, cleaning up in the process.This holds true for the request / response cycle, but doesn't apply to background processes etc.
+
 h2. Stability
 
 In (pre)-production use at a handful of sites and the test suite is designed to run against the existing ActiveRecord suite.
