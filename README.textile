@@ -130,6 +130,8 @@ Without GC   0.040000   0.010000   0.050000 (  0.311233)
 </code>
 </pre>
 
+References "this":http://github.com/oldmoe/mysqlplus/blob/79f742908dd9ce1c4b26548a96967fd20aacd4a2/test/gc_benchmark.rb benchmark script.
+
 h2. Asynchronous abilities
 
 The adapter exposes Mysqplus's async interface through the connection instance.
