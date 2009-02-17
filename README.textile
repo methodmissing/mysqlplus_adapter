@@ -91,7 +91,11 @@ This concept is quite useful in an MVC context, allowing the controller to fetch
     def index
       # No blocking, executes in the background, yields a deferrable result.
       #
-      @posts = Posts.published.find(:all, :defer => true )
+      @posts = Posts.published.find(:all, :defer => true ) # Slow, push to the background 
+      @visitors = Site.visitors.recent # Snappy
+      # You don't want to do this. Try to not invoke methods on deferred results right away 
+      # to minimize potential blocking. 
+      @posts.any?  
     end
 
   end
