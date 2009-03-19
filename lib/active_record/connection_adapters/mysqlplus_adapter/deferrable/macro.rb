@@ -70,12 +70,16 @@ module ActiveRecord
       # ...
       #
       def find_by_sql_with_defer( sql, defer = false )
-        if defer
+        if defer && !defer.is_a?(Numeric)
           ActiveRecord::Deferrable::Result.new do 
             find_by_sql_without_defer( sql )
           end
         else
-          find_by_sql_without_defer( sql )
+          if (@@find_by_sql_arity ||= method(:find_by_sql_without_defer).arity) == -2
+            find_by_sql_without_defer( sql, defer )
+          else
+            find_by_sql_without_defer( sql )
+          end  
         end    
       end
 
@@ -111,7 +115,11 @@ module ActiveRecord
           if include_associations.any? && references_eager_loaded_tables?(options)
             records = find_with_associations(options)
           else
-            records = find_by_sql(construct_finder_sql(options))
+            if Object.const_defined?(:Scrooge)
+              records = find_by_sql(construct_finder_sql(options), options[:scrooge_callsite])
+            else
+              records = find_by_sql(construct_finder_sql(options))
+            end
             if include_associations.any?
               preload_associations(records, preload_deferred_includes( include_associations, options ))
             end
